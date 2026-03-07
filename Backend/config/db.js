@@ -1,7 +1,6 @@
 import pkg from "pg";
 const { Client } = pkg;
 
-// connect using Neon DATABASE_URL
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -9,7 +8,6 @@ const client = new Client({
   }
 });
 
-// initialize DB and create tables
 export async function initDB() {
   try {
     await client.connect();
@@ -68,9 +66,9 @@ export async function initDB() {
     `);
 
     console.log("Tables ensured");
+
   } catch (error) {
     console.error("Database initialization error:", error);
-    process.exit(1);
   }
 }
 
