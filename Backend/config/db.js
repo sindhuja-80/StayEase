@@ -1,7 +1,7 @@
 import pkg from "pg";
-const { Client } = pkg;
+const { Pool } = pkg;
 
-const client = new Client({
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
@@ -10,7 +10,8 @@ const client = new Client({
 
 export async function initDB() {
   try {
-    await client.connect();
+    const client = await pool.connect();
+
     console.log("PostgreSQL connected");
 
     await client.query(`
@@ -65,6 +66,8 @@ export async function initDB() {
       );
     `);
 
+    client.release(); // VERY IMPORTANT
+
     console.log("Tables ensured");
 
   } catch (error) {
@@ -72,4 +75,4 @@ export async function initDB() {
   }
 }
 
-export default client;
+export default pool;
