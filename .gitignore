@@ -1,0 +1,85 @@
+ADMIN_SETUP_GUIDE.md
+FINAL_AUDIT_REPORT.md
+FRONTEND_UPDATES.md
+ISSUES_RESOLVED.md
+MIGRATION_SUMMARY.md
+NETWORK_ERROR_FIX.md
+PROJECT_COMPLETION_REPORT.md
+QUICK_REFERENCE.md
+SETUP_GUIDE.md
+START_HERE.md
+INDEX.md
+Login_TROUBLESHOOTINHG.md
+DIAGNOSE.bat
+start.bat
+start.sh
+
+# Node modules
+node_modules/
+**/node_modules/
+Backend/node_modules/
+Frontend/node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+Backend/.env
+Frontend/.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build folders
+dist/
+build/
+.out/
+
+# Vite cache
+node_modules/.vite
+
+# Temporary uploads
+Backend/temp/
+
+# Database test scripts (optional)
+Backend/add-test-*.js
+Backend/test-*.js
+Backend/clean-*.js
+Backend/direct-test.js
+
+# Coverage
+coverage/
+
+# VS Code
+.vscode/
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Deployment configs (optional)
+.vercel
+
+# Mac/Linux system files
+*.swp
+*.swo
+
+# Debug files
+*.pid
+*.seed
+
+# Optional documentation drafts
+*_REPORT.md
+*_GUIDE.md
+*_SUMMARY.md
+
+check-users.js
