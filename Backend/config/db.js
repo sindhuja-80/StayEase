@@ -1,21 +1,20 @@
-import { Client } from "pg";
+import pkg from "pg";
+const { Client } = pkg;
 
-// configuration pulled from environment for flexibility
+// connect using Neon DATABASE_URL
 const client = new Client({
-  host: process.env.PG_HOST || "localhost",
-  port: process.env.PG_PORT ? parseInt(process.env.PG_PORT) : 5432,
-  user: process.env.PG_USER || "postgres",
-  password: process.env.PG_PASSWORD || "",
-  database: process.env.PG_DATABASE || "stayease",
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-// initialize connection and create tables if they don't exist
+// initialize DB and create tables
 export async function initDB() {
   try {
     await client.connect();
     console.log("PostgreSQL connected");
 
-    // create tables
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
