@@ -21,7 +21,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://stayease-frontendurl.vercel.app/"
+      "https://stayeasefrontendurl.vercel.app/"
     ],
     credentials: true
   })
