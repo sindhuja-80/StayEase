@@ -1,15 +1,26 @@
-import express from "express"
-import upload from "../middleware/uploadMiddleware.js"
-import { protect } from "../middleware/authMiddleware.js"
-import { createRoom, getOwnerRooms, getRooms, getSingleRoom, toggleRoomAvailability } from "../controllers/roomController.js"
+import express from "express";
 
-const roomRouter=express.Router()
+import {
+  createRoom,
+  getRooms,
+  getSingleRoom,
+  getOwnerRooms,
+  toggleRoomAvailability
+} from "../controllers/roomController.js";
 
-// Specific routes MUST come before generic :id route
-roomRouter.post("/",protect,upload.array("images",4),createRoom)
-roomRouter.post('/toggle-availability',protect,toggleRoomAvailability)
-roomRouter.get('/owner',protect,getOwnerRooms)
-roomRouter.get('/:id', getSingleRoom)
-roomRouter.get('/',getRooms)
+import protect from "../middleware/protect.js";
+import upload from "../middleware/uploadMiddleware.js";
 
-export default roomRouter
+const router = express.Router();
+
+router.post("/create", protect, upload.array("images", 4), createRoom);
+
+router.get("/", getRooms);
+
+router.get("/owner/rooms", protect, getOwnerRooms);
+
+router.get("/:id", getSingleRoom);
+
+router.post("/toggle", protect, toggleRoomAvailability);
+
+export default router;

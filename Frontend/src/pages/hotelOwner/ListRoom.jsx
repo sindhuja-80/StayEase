@@ -1,83 +1,115 @@
-import React, { useEffect, useState } from 'react'
-import Title from '../../components/Title'
-import { useAppContext } from '../../context/AppContext'
-import toast from 'react-hot-toast'
+import React, { useEffect, useState } from "react";
+import Title from "../../components/Title";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 const ListRoom = () => {
 
-  const [rooms, setRooms] = useState([])
-  const { axios, getToken, user, currency } = useAppContext()
+  const [rooms, setRooms] = useState([]);
+
+  const { axios, getToken, user, currency } = useAppContext();
 
   const fetchRooms = async () => {
+
     try {
 
-      const { data } = await axios.get('/api/rooms/owner', {
-        headers: { Authorization: `Bearer ${await getToken()}` }
-      })
+      const { data } = await axios.get(
+        "/api/rooms/owner/rooms",
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`
+          }
+        }
+      );
 
       if (data.success) {
-        setRooms(data.rooms)
+        setRooms(data.rooms || []);
       } else {
-        toast.error(data.message)
+        toast.error(data.message);
       }
 
     } catch (error) {
-      toast.error(error.message)
+      toast.error(error.message);
     }
-  }
+
+  };
+
 
   const toggleAvailability = async (roomId) => {
 
-    const { data } = await axios.post(
-      '/api/rooms/toggle-availability',
-      { roomId },
-      { headers: { Authorization: `Bearer ${await getToken()}` } }
-    )
+    try {
 
-    if (data.success) {
-      toast.success(data.message)
-      fetchRooms()
-    } else {
-      toast.error(data.message)
+      const { data } = await axios.post(
+        "/api/rooms/toggle",
+        { roomId },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`
+          }
+        }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        fetchRooms();
+      } else {
+        toast.error(data.message);
+      }
+
+    } catch (error) {
+      toast.error(error.message);
     }
 
-  }
+  };
+
 
   useEffect(() => {
-    if (user) fetchRooms()
-  }, [user])
+    if (user) {
+      fetchRooms();
+    }
+  }, [user]);
+
 
   return (
 
     <div>
 
-      <Title align='left' title='Room listings' />
+      <Title align="left" title="Room listings" />
 
-      <div className='mt-5'>
+      <div className="mt-5">
 
-        {rooms.map((item) => (
+        {rooms.length > 0 ? (
 
-          <div key={item.id} className='flex justify-between border-b py-3'>
+          rooms.map((item) => (
 
-            <p>{item.room_type}</p>
+            <div key={item.id} className="flex justify-between border-b py-3">
 
-            <p>{currency} {item.price_per_night}</p>
+              <p>{item.room_type}</p>
 
-            <input
-              type="checkbox"
-              checked={item.is_available}
-              onChange={() => toggleAvailability(item.id)}
-            />
+              <p>{currency} {item.price_per_night}</p>
 
-          </div>
+              <input
+                type="checkbox"
+                checked={item.is_available}
+                onChange={() => toggleAvailability(item.id)}
+              />
 
-        ))}
+            </div>
+
+          ))
+
+        ) : (
+
+          <p className="text-gray-500">No rooms added yet</p>
+
+        )}
 
       </div>
 
     </div>
 
-  )
-}
+  );
 
-export default ListRoom
+};
+
+export default ListRoom;

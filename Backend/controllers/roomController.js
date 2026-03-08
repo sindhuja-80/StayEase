@@ -1,92 +1,123 @@
 import { v2 as cloudinary } from "cloudinary";
-import client from "../config/db.js";
+import pool from "../config/db.js";
 import fs from "fs";
+
 
 // CREATE ROOM
 export const createRoom = async (req, res) => {
   try {
+
     const { roomType, pricePerNight, amenities } = req.body;
 
     const authInfo = typeof req.auth === "function" ? req.auth() : req.auth;
 
     if (!authInfo?.userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized"
+      });
     }
 
-    // Find hotel of owner
-    const hotelResult = await client.query(
+    if (!roomType || !pricePerNight) {
+      return res.json({
+        success: false,
+        message: "Room type and price are required"
+      });
+    }
+
+    // find owner hotel
+    const hotelRes = await pool.query(
       "SELECT * FROM hotels WHERE owner = $1",
       [authInfo.userId]
     );
 
-    const hotel = hotelResult.rows[0];
+    const hotel = hotelRes.rows[0];
 
     if (!hotel) {
-      return res.json({ success: false, message: "No Hotel found" });
+      return res.json({
+        success: false,
+        message: "No hotel found"
+      });
     }
 
-    // Parse amenities
+    // parse amenities safely
     let parsedAmenities = [];
 
     if (amenities) {
       try {
         parsedAmenities =
-          typeof amenities === "string" ? JSON.parse(amenities) : amenities;
+          typeof amenities === "string"
+            ? JSON.parse(amenities)
+            : amenities;
       } catch {
         parsedAmenities = [];
       }
     }
 
-    // Check images
-    if (!req.files || req.files.length === 0) {
-      return res.json({ success: false, message: "No images provided" });
+    // upload images safely
+    let imageUrls = [];
+
+    if (req.files && req.files.length > 0) {
+
+      imageUrls = await Promise.all(
+        req.files.map(async (file) => {
+
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: "stayease-rooms"
+          });
+
+          try {
+            fs.unlinkSync(file.path);
+          } catch {}
+
+          return result.secure_url;
+        })
+      );
+
     }
 
-    // Upload images to cloudinary
-    const uploadImages = await Promise.all(
-      req.files.map(async (file) => {
-        const result = await cloudinary.uploader.upload(file.path, {
-          folder: "stayease-rooms",
-        });
-
-        fs.unlinkSync(file.path);
-
-        return result.secure_url;
-      })
-    );
-
-    // Insert room
-    await client.query(
+    await pool.query(
       `INSERT INTO rooms (hotel, room_type, price_per_night, amenities, images)
        VALUES ($1,$2,$3,$4,$5)`,
       [
         hotel.id,
         roomType,
-        Number(pricePerNight),
+        pricePerNight,
         JSON.stringify(parsedAmenities),
-        uploadImages,
+        imageUrls
       ]
     );
 
     res.json({
       success: true,
-      message: "Room created successfully",
+      message: "Room created successfully"
     });
+
   } catch (error) {
-    console.error("Create Room Error:", error);
+
+    console.error("Create room error:", error);
 
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
+
   }
 };
+
 
 // GET ALL ROOMS
 export const getRooms = async (req, res) => {
   try {
-    const result = await client.query(`
-      SELECT r.*, h.owner as hotel_owner, u.image as owner_image
+
+    const result = await pool.query(`
+      SELECT 
+        r.*,
+        h.name AS hotel_name,
+        h.address AS hotel_address,
+        h.city AS hotel_city,
+        h.owner,
+        u.image AS owner_image
       FROM rooms r
       JOIN hotels h ON r.hotel = h.id
       JOIN users u ON h.owner = u.id
@@ -96,93 +127,130 @@ export const getRooms = async (req, res) => {
 
     res.json({
       success: true,
-      rooms: result.rows,
+      rooms: result.rows
     });
+
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
+
   }
 };
 
 // GET SINGLE ROOM
 export const getSingleRoom = async (req, res) => {
   try {
+
     const { id } = req.params;
 
-    const result = await client.query(
-      `SELECT r.*, h.owner as hotel_owner, u.image as owner_image
-       FROM rooms r
-       JOIN hotels h ON r.hotel = h.id
-       JOIN users u ON h.owner = u.id
-       WHERE r.id = $1`,
-      [id]
-    );
+    const result = await pool.query(`
+      SELECT 
+        r.*,
+        h.name AS hotel_name,
+        h.address AS hotel_address,
+        h.city AS hotel_city,
+        h.owner,
+        u.image AS owner_image
+      FROM rooms r
+      JOIN hotels h ON r.hotel = h.id
+      JOIN users u ON h.owner = u.id
+      WHERE r.id = $1
+    `,[id]);
 
-    const room = result.rows[0];
-
-    if (!room) {
-      return res.json({ success: false, message: "Room not found" });
+    if (!result.rows[0]) {
+      return res.json({
+        success: false,
+        message: "Room not found"
+      });
     }
 
     res.json({
       success: true,
-      room,
+      room: result.rows[0]
     });
+
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
+
   }
 };
+
 
 // GET OWNER ROOMS
 export const getOwnerRooms = async (req, res) => {
   try {
+
     const authInfo = typeof req.auth === "function" ? req.auth() : req.auth;
-    console.log("USER ID:", authInfo.userId);
-    const hotelRes = await client.query(
+
+    if (!authInfo?.userId) {
+      return res.json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+
+    const hotelRes = await pool.query(
       "SELECT * FROM hotels WHERE owner = $1",
-      [authInfo?.userId]
+      [authInfo.userId]
     );
 
     const hotel = hotelRes.rows[0];
 
     if (!hotel) {
-      return res.json({ success: false, message: "No Hotel found" });
+      return res.json({
+        success: false,
+        message: "No hotel found"
+      });
     }
 
-    const roomsRes = await client.query(
+    const roomsRes = await pool.query(
       "SELECT * FROM rooms WHERE hotel = $1",
       [hotel.id]
     );
 
     res.json({
       success: true,
-      rooms: roomsRes.rows,
+      rooms: roomsRes.rows
     });
+
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
+
   }
 };
+
 
 // TOGGLE ROOM AVAILABILITY
 export const toggleRoomAvailability = async (req, res) => {
   try {
+
     const { roomId } = req.body;
 
-    const roomRes = await client.query(
+    if (!roomId) {
+      return res.json({
+        success: false,
+        message: "Room ID required"
+      });
+    }
+
+    const roomRes = await pool.query(
       "SELECT * FROM rooms WHERE id = $1",
       [roomId]
     );
@@ -190,26 +258,32 @@ export const toggleRoomAvailability = async (req, res) => {
     const room = roomRes.rows[0];
 
     if (!room) {
-      return res.json({ success: false, message: "Room not found" });
+      return res.json({
+        success: false,
+        message: "Room not found"
+      });
     }
 
-    const newStatus = !room.is_available;
-
-    await client.query(
-      "UPDATE rooms SET is_available=$1, updated_at=NOW() WHERE id=$2",
-      [newStatus, roomId]
+    await pool.query(
+      `UPDATE rooms
+       SET is_available = $1, updated_at = NOW()
+       WHERE id = $2`,
+      [!room.is_available, roomId]
     );
 
     res.json({
       success: true,
-      message: "Room availability updated",
+      message: "Room availability updated"
     });
+
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
+
   }
 };

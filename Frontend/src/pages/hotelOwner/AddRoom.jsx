@@ -13,7 +13,7 @@ const AddRoom = () => {
 
   const [input, setInput] = useState({
     roomType: "",
-    pricePerNight: 0,
+    pricePerNight: "",
     amenities: {
       "Free WiFi": false,
       "Room Service": false,
@@ -40,6 +40,7 @@ const AddRoom = () => {
     setLoading(true);
 
     try {
+
       const formData = new FormData();
 
       formData.append("roomType", input.roomType);
@@ -58,25 +59,26 @@ const AddRoom = () => {
       });
 
       const { data } = await axios.post(
-        "/api/rooms/",
+        "/api/rooms/create",
         formData,
         {
           headers: {
-            Authorization: `Bearer ${await getToken()}`,
-          },
+            Authorization: `Bearer ${await getToken()}`
+          }
         }
       );
 
       if (data.success) {
+
         toast.success(data.message);
 
         setInput({
           roomType: "",
-          pricePerNight: 0,
+          pricePerNight: "",
           amenities: {
             "Free WiFi": false,
-            "Free Breakfast": false,
             "Room Service": false,
+            "Free Breakfast": false,
             "Mountain View": false,
             "Pool Access": false,
           },
@@ -86,7 +88,7 @@ const AddRoom = () => {
 
       } else {
 
-        if (data.message.includes("Hotel")) {
+        if (data.message.includes("hotel")) {
           toast.error("Please register your hotel first");
           setShowHotelReg(true);
         } else {
@@ -96,10 +98,15 @@ const AddRoom = () => {
       }
 
     } catch (error) {
-      toast.error(error.message);
+
+      toast.error(error.response?.data?.message || error.message);
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
   return (
@@ -115,8 +122,11 @@ const AddRoom = () => {
         <p className="text-gray-800 mt-10">Images</p>
 
         <div className="grid grid-cols-2 sm:flex gap-4 my-2 flex-wrap">
+
           {Object.keys(images).map((key) => (
+
             <label htmlFor={`roomImage${key}`} key={key}>
+
               <img
                 src={
                   images[key]
@@ -126,6 +136,7 @@ const AddRoom = () => {
                 alt=""
                 className="max-h-13 cursor-pointer opacity-80"
               />
+
               <input
                 type="file"
                 accept="image/*"
@@ -135,13 +146,17 @@ const AddRoom = () => {
                   setImages({ ...images, [key]: e.target.files[0] })
                 }
               />
+
             </label>
+
           ))}
+
         </div>
 
         <div className="w-full flex max-sm:flex-col sm:gap-4 mt-4">
 
           <div className="flex-1 max-w-48">
+
             <p className="text-gray-800 mt-4">Room Type</p>
 
             <select
@@ -151,16 +166,19 @@ const AddRoom = () => {
               }
               className="border opacity-70 border-gray-300 mt-1 rounded p-2 w-full"
             >
+
               <option value="">Select Room Type</option>
               <option value="Single Bed">Single Bed</option>
               <option value="Double Bed">Double Bed</option>
               <option value="Luxury Room">Luxury Room</option>
               <option value="Family Suit">Family Suit</option>
+
             </select>
 
           </div>
 
           <div>
+
             <p className="mt-4 text-gray-800">
               Price <span className="text-xs">/night</span>
             </p>
@@ -174,6 +192,7 @@ const AddRoom = () => {
               }
               className="border opacity-70 border-gray-300 mt-1 rounded p-2 w-full"
             />
+
           </div>
 
         </div>
@@ -188,7 +207,7 @@ const AddRoom = () => {
 
               <input
                 type="checkbox"
-                id={`amenities${index + 1}`}
+                id={`amenities${index}`}
                 checked={input.amenities[amenity]}
                 onChange={() =>
                   setInput({
@@ -201,10 +220,7 @@ const AddRoom = () => {
                 }
               />
 
-              <label htmlFor={`amenities${index + 1}`}>
-                {" "}
-                {amenity}
-              </label>
+              <label htmlFor={`amenities${index}`}> {amenity}</label>
 
             </div>
 
@@ -222,6 +238,7 @@ const AddRoom = () => {
       </form>
 
       {showHotelReg && <HotelReg />}
+
     </>
   );
 };

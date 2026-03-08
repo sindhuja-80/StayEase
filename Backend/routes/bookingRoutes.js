@@ -1,13 +1,26 @@
-import express from "express"
-import { checkAvailabilityAPI, createBooking, getHotelBookings, getUserBookings } from "../controllers/bookingController.js"
-import { protect } from "../middleware/authMiddleware.js"
+import express from "express";
+import {
+  checkAvailabilityAPI,
+  createBooking,
+  getHotelBookings,
+  getUserBookings,
+  stripePayment, confirmStripePayment 
+} from "../controllers/bookingController.js";
 
 
-const bookingRouter=express.Router()
+import protect from "../middleware/protect.js";
 
-bookingRouter.post('/check-availability',checkAvailabilityAPI)
-bookingRouter.post('/book',protect,createBooking)
-bookingRouter.get('/user',protect,getUserBookings)
-bookingRouter.get('/hotel',protect,getHotelBookings)
+const bookingRouter = express.Router();
 
-export default bookingRouter
+bookingRouter.post("/check-availability", checkAvailabilityAPI);
+
+bookingRouter.post("/book", protect, createBooking);
+
+bookingRouter.get("/user", protect, getUserBookings);
+
+bookingRouter.get("/hotel", protect, getHotelBookings);
+
+bookingRouter.post("/stripe-payment", protect, stripePayment);
+bookingRouter.post("/confirm-payment", protect, confirmStripePayment);
+
+export default bookingRouter;
